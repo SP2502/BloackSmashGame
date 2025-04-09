@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>💥 Block Smash! (Whack-A-Mob)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #1d1f1f;
+      font-family: 'Press Start 2P', cursive;
+      color: #fefefe;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      margin: 20px;
+      color: #00ff00;
+      text-shadow: 2px 2px #000;
+    }
+
+    #container {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 50px;
+    }
+
+    #game {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .block {
+      width: 100px;
+      height: 100px;
+      background: #3e8e41;
+      border: 4px solid #2ecc71;
+      border-radius: 8px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .mob {
+      position: absolute;
+      font-size: 40px;
+      top: 20px;
+      left: 28px;
+      display: none;
+    }
+
+    #sidebar {
+      background: #2c3e50;
+      padding: 20px;
+      border-radius: 10px;
+      min-width: 220px;
+      box-shadow: 0 0 10px #00ff99;
+    }
+
+    #scoreboard {
+      margin-bottom: 20px;
+    }
+
+    #scoreboard p {
+      margin: 10px 0;
+      font-size: 12px;
+    }
+
+    #startBtn, #playAgainBtn {
+      padding: 10px;
+      font-size: 10px;
+      background-color: #e67e22;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+
+    #quote {
+      margin-top: 20px;
+      font-size: 10px;
+      color: #00ffff;
+    }
+
+    .highlight {
+      animation: blink 0.3s ease-in-out 2;
+    }
+
+    @keyframes blink {
+      0%, 100% { background-color: #f39c12; }
+      50% { background-color: #f1c40f; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>💥 Block Smash! (Whack-A-Mob)</h1>
+
+  <div id="container">
+    <div id="game"></div>
+    
+    <div id="sidebar">
+      <div id="scoreboard">
+        <p>💯 Score: <span id="score">0</span></p>
+        <p>⏱️ Time Left: <span id="time">30</span>s</p>
+        <button id="startBtn">▶️ Play</button>
+        <button id="playAgainBtn" style="display:none;">🔁 Play Again</button>
+      </div>
+      <div id="quote"></div>
+    </div>
+  </div>
+
+  <audio id="hitSound" src="https://www.soundjay.com/button/sounds/button-16.mp3"></audio>
+  <audio id="wrongSound" src="https://www.soundjay.com/button/sounds/button-10.mp3"></audio>
+
+  <script>
+    const game = document.getElementById('game');
+    const scoreDisplay = document.getElementById('score');
+    const timeDisplay = document.getElementById('time');
+    const startBtn = document.getElementById('startBtn');
+    const playAgainBtn = document.getElementById('playAgainBtn');
+    const quoteBox = document.getElementById('quote');
+    const hitSound = document.getElementById('hitSound');
+    const wrongSound = document.getElementById('wrongSound');
+
+    let score = 0;
+    let timeLeft = 30;
+    let timer;
+    let mobTimeout;
+    let streak = 0;
+
+    const mobs = ['🧟', '💣', '🧑']; // Zombie, Creeper, Villager
+    const hostile = ['🧟', '💣'];
+    const quotes = [
+      "⚡ Every tap sharpens your reflex. Keep smashing it!",
+      "🔥 Winners train, losers complain. Be the winner!",
+      "🎯 Focus. Smash. Repeat. Success follows.",
+      "🚀 Practice = Power. Keep grinding!"
+    ];
+
+    function createBlocks() {
+      game.innerHTML = '';
+      for (let i = 0; i < 9; i++) {
+        const block = document.createElement('div');
+        block.classList.add('block');
+
+        const mob = document.createElement('div');
+        mob.classList.add('mob');
+        block.appendChild(mob);
+
+        block.addEventListener('click', () => {
+          if (mob.style.display === 'block') {
+            if (hostile.includes(mob.innerText)) {
+              score++;
+              streak++;
+              hitSound.play();
+            } else {
+              score--;
+              streak = 0;
+              wrongSound.play();
+            }
+            mob.classList.add('highlight');
+            setTimeout(() => mob.classList.remove('highlight'), 300);
+            mob.style.display = 'none';
+            scoreDisplay.innerText = score;
+          }
+        });
+
+        game.appendChild(block);
+      }
+    }
+
+    function showRandomMob() {
+      const mobsOnBlocks = document.querySelectorAll('.mob');
+      mobsOnBlocks.forEach(mob => mob.style.display = 'none');
+
+      const randomIndex = Math.floor(Math.random() * mobsOnBlocks.length);
+      const randomMob = mobs[Math.floor(Math.random() * mobs.length)];
+      mobsOnBlocks[randomIndex].innerText = randomMob;
+      mobsOnBlocks[randomIndex].style.display = 'block';
+
+      // Speed up over time
+      let speed = Math.max(200, 600 - score * 15);
+      mobTimeout = setTimeout(showRandomMob, speed);
+    }
+
+    function startGame() {
+      score = 0;
+      streak = 0;
+      timeLeft = 30;
+      scoreDisplay.innerText = score;
+      timeDisplay.innerText = timeLeft;
+      quoteBox.innerText = '';
+      startBtn.style.display = 'none';
+      playAgainBtn.style.display = 'none';
+
+      createBlocks();
+      showRandomMob();
+
+      timer = setInterval(() => {
+        timeLeft--;
+        timeDisplay.innerText = timeLeft;
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          clearTimeout(mobTimeout);
+          const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+          quoteBox.innerText = `⏱️ Time's up! Score: ${score}\n${randomQuote}`;
+          playAgainBtn.style.display = 'inline-block';
+        }
+      }, 1000);
+    }
+
+    startBtn.addEventListener('click', startGame);
+    playAgainBtn.addEventListener('click', startGame);
+  </script>
+
+</body>
+</html>
